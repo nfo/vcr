@@ -38,7 +38,6 @@ module VCR
         def_delegators :"VCR::HttpStubbingAdapters::Typhoeus",
           :enabled?,
           :uri_should_be_ignored?,
-          :stubbed_response_for,
           :http_connections_allowed?,
           :vcr_request_from
 
@@ -67,7 +66,7 @@ module VCR
         end
 
         def stubbed_response
-          @stubbed_response ||= stubbed_response_for(vcr_request)
+          @stubbed_response ||= VCR.http_interactions.response_for(vcr_request)
         end
 
         def typhoeus_response

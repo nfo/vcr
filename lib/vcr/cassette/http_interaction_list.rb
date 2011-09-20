@@ -6,6 +6,8 @@ module VCR
         def has_interaction_matching?(*a); false; end
       end
 
+      attr_reader :interactions, :request_matchers
+
       def initialize(interactions, request_matchers, parent_list = NullList.new)
         @interactions      = interactions
         @request_matchers  = request_matchers

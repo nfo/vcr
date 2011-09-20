@@ -65,16 +65,6 @@ describe VCR::Cassette do
       VCR::Cassette.new('empty', :record => :none).recorded_interactions.should eq([])
     end
 
-    it 'creates a stubs checkpoint on the http_stubbing_adapter' do
-      cassette = nil
-
-      VCR.http_stubbing_adapter.should_receive(:create_stubs_checkpoint) do |c|
-        cassette = c
-      end
-
-      VCR::Cassette.new('example').should equal(cassette)
-    end
-
     describe "reading the file from disk" do
       before(:each) do
         File.stub(:size? => true)
@@ -277,22 +267,18 @@ describe VCR::Cassette do
             cassette.should have(2).recorded_interactions
           end
 
-          it "stubs the recorded requests with the http stubbing adapter" do
+          it 'instantiates the http_interactions with the loaded interactions and the request matchers' do
             VCR.configuration.cassette_library_dir = "#{VCR::SPEC_ROOT}/fixtures/cassette_spec"
-            VCR.http_stubbing_adapter.should_receive(:stub_requests).with([an_instance_of(VCR::HTTPInteraction)]*3, anything)
-            VCR::Cassette.new('example', :record => record_mode)
-          end
-
-          it "passes the :match_request_on option to #stub_requests" do
-            VCR.configuration.cassette_library_dir = "#{VCR::SPEC_ROOT}/fixtures/cassette_spec"
-            VCR.http_stubbing_adapter.should_receive(:stub_requests).with(anything, [:body, :headers])
-            VCR::Cassette.new('example', :record => record_mode, :match_requests_on => [:body, :headers])
+            cassette = VCR::Cassette.new('example', :record => record_mode, :match_requests_on => [:body, :headers])
+            cassette.http_interactions.interactions.should have(3).interactions
+            cassette.http_interactions.request_matchers.should == [:body, :headers]
           end
         else
-          it "does not stub the recorded requests with the http stubbing adapter" do
+          it 'instantiates the http_interactions with the no interactions and the request matchers' do
             VCR.configuration.cassette_library_dir = "#{VCR::SPEC_ROOT}/fixtures/cassette_spec"
-            VCR.http_stubbing_adapter.should_not_receive(:stub_requests)
-            VCR::Cassette.new('example', :record => record_mode)
+            cassette = VCR::Cassette.new('example', :record => record_mode, :match_requests_on => [:body, :headers])
+            cassette.http_interactions.interactions.should have(0).interactions
+            cassette.http_interactions.request_matchers.should == [:body, :headers]
           end
         end
       end
@@ -387,11 +373,6 @@ describe VCR::Cassette do
         before(:each) do
           base_dir = "#{VCR::SPEC_ROOT}/fixtures/cassette_spec"
           FileUtils.cp(base_dir + "/example.yml", VCR.configuration.cassette_library_dir + "/example.yml")
-        end
-
-        it "restore the stubs checkpoint on the http stubbing adapter" do
-          VCR.http_stubbing_adapter.should_receive(:restore_stubs_checkpoint).with(subject)
-          subject.eject
         end
 
         it "does not re-write to disk the previously recorded interactions if there are no new ones" do

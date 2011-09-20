@@ -70,6 +70,11 @@ module VCR
     end
   end
 
+  def http_interactions
+    return current_cassette.http_interactions if current_cassette
+    VCR::Cassette::HTTPInteractionList::NullList.new
+  end
+
   def request_matcher_registry
     @request_matcher_registry ||= RequestMatcherRegistry.new
   end
