@@ -113,8 +113,11 @@ WebMock.after_request(:real_requests_only => true) do |request, response|
 end
 
 WebMock::NetConnectNotAllowedError.class_eval do
-  undef stubbing_instructions
-  def stubbing_instructions(*args)
-    '.  ' + VCR::HttpStubbingAdapters::Common::RECORDING_INSTRUCTIONS
+  alias stubbing_instructions_without_vcr stubbing_instructions
+  
+  def stubbing_instructions_with_vcr(*args)
+    '.  ' + VCR::HttpStubbingAdapters::Common::RECORDING_INSTRUCTIONS + ". Or: " + stubbing_instructions_without_vcr(*args)
   end
+  undef stubbing_instructions
+  alias stubbing_instructions stubbing_instructions_with_vcr
 end
